@@ -28,4 +28,4 @@ Train too hard on the new data and the model loses the general abilities it star
 
 Prompting and retrieval (RAG) change what the model **sees**; fine-tuning changes the model **itself**. Reach for fine-tuning when you need consistent style, format or domain behavior that prompting cannot reliably give you.
 
-Next: [06 · Quick reference and self-test](06-quick-reference-and-self-test.md)
+Next: [06 · Transformers, attention and temperature](06-transformers-attention-temperature.md)

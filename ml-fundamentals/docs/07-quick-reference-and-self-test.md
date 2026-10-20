@@ -1,4 +1,4 @@
-# 06 · Quick reference and self-test
+# 07 · Quick reference and self-test
 
 ## Cheat sheet
 
@@ -26,6 +26,16 @@
 | Calibration | Predicted probabilities match observed frequencies |
 | Fine-tuning | Continue training a pretrained model on a task-specific dataset, gently |
 | LoRA | Train small adapters; keep the base weights frozen |
+| Transformer | Stack of blocks; each block = attention (mix across tokens) + MLP (refine each token), with layer norm and residuals |
+| Query / Key / Value | Query = what I look for; Key = what I offer for matching; Value = the content passed on |
+| Attention | Score query against all keys (q·k/√d), softmax into weights, take the weighted sum of values |
+| Multi-head attention | Several attentions in parallel, each with its own Q, K, V weights |
+| Causal mask | Blocks looking at future tokens; lets decoder LLMs train on all positions in parallel |
+| Position encoding / RoPE | Injects token order, since attention alone ignores it |
+| KV cache | Stores past keys and values during generation so they are not recomputed |
+| Logits | Raw scores over the vocabulary, before softmax |
+| Temperature | Divide logits by T before softmax: T < 1 sharper, T > 1 flatter, T → 0 greedy; ranking unchanged |
+| Top-k / top-p | Sample only from the k most likely tokens / the smallest set adding up to probability p |
 
 ## Common mix-ups
 
@@ -37,6 +47,9 @@
 - **Optimizers** are update rules for weights; the learning rate is a setting they use, and the schedule changes it over time.
 - **Adam's per-weight step** is driven by gradient magnitude: large gradients get damped, small ones boosted.
 - **AUC vs calibration:** AUC measures ranking only; a model can rank well and still output badly scaled probabilities.
+- **Attention vs MLP:** attention mixes information across tokens; the MLP transforms each token separately.
+- **Temperature:** changes the spread of the probabilities, never the ranking, and does not change the model's weights.
+- **Training vs generation:** training is parallel over all positions (causal mask); generation is one token at a time.
 
 ## Self-test
 
@@ -56,6 +69,10 @@ Answer out loud in 2-3 minutes each, then check against the notes.
 12. Why is accuracy misleading under class imbalance? Name four fixes at four levels.
 13. What does it mean for a model to be calibrated? How can a model have high AUC and bad calibration? Name three ways to fix it.
 14. What is fine-tuning? Name three approaches and the main risk.
+15. Explain attention with queries, keys and values. Why divide by √d, and why multiple heads?
+16. What are the parts of a transformer block and what does each do? Why layer norm instead of batch norm?
+17. What does the causal mask do, and how does it let an LLM train on next tokens in parallel?
+18. What does temperature do to a model's output probabilities? How does it relate to temperature scaling in calibration?
 
 ## Topics worth studying next
 
@@ -66,7 +83,7 @@ Answer out loud in 2-3 minutes each, then check against the notes.
 - **Backprop and optimization:** chain-rule intuition, vanishing/exploding gradients, ReLU vs sigmoid/tanh.
 - **Trees vs neural nets:** random forests vs gradient boosting; when each wins on tabular data.
 - **Embeddings and two-tower models:** negative sampling, contrastive loss, approximate nearest neighbor retrieval.
-- **Transformers:** attention (queries, keys, values), why layer norm and residuals are there, positional information.
+- **Transformers and attention:** covered in [06](06-transformers-attention-temperature.md); next, go deeper on efficient attention and long-context tricks.
 - **Offline vs online evaluation:** why offline metrics can disagree with A/B results, position bias, cold start, feedback loops.
 
 Practice structure for explaining any concept: the intuition in one sentence, a tiny example, then the main failure mode.
