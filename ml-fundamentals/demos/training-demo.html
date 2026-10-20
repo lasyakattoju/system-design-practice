@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Training demo: fitting a line</title>
+<style>
+:root{--bg:#fff;--fg:#2c2c2a;--muted:#5f5e5a;--surface:#f1efe8;--border:#b4b2a9;--btn:#fff;--btnb:#888780}
+@media (prefers-color-scheme: dark){:root{--bg:#1f1e1d;--fg:#f1efe8;--muted:#b4b2a9;--surface:#2c2c2a;--border:#5f5e5a;--btn:#2c2c2a;--btnb:#888780}}
+body{margin:0;padding:20px 16px;background:var(--bg);color:var(--fg);font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;max-width:720px;margin:0 auto}
+h1{font-size:20px;font-weight:600;margin:0 0 4px}
+p.sub{margin:0 0 16px;color:var(--muted);font-size:14px}
+.mrow{display:flex;gap:12px;margin:0 0 12px}
+.m{flex:1;background:var(--surface);border-radius:8px;padding:12px 14px}
+.m .l{font-size:13px;color:var(--muted)}
+.m .v{font-size:22px;font-weight:500}
+.leg{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin:0 0 4px}
+.leg i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+.ctl{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:12px 0 0;font-size:14px}
+button{background:var(--btn);color:var(--fg);border:1px solid var(--btnb);border-radius:8px;padding:6px 14px;font-size:14px;cursor:pointer}
+button:hover{background:var(--surface)}
+svg text{fill:var(--muted);font-size:12px}
+</style>
+</head>
+<body>
+<h1>Training demo: fitting a line</h1>
+<p class="sub">Each step: guess, measure the loss, nudge the weights. Raise the learning rate toward 1.0 and the line overshoots.</p>
+<div class="mrow">
+<div class="m"><div class="l">Training steps</div><div class="v" id="steps">0</div></div>
+<div class="m"><div class="l">Loss (average squared error)</div><div class="v" id="loss">0</div></div>
+</div>
+<div class="leg"><span><i style="background:#D85A30"></i>True labels</span><span><i style="background:#7F77DD"></i>Model's line</span><span><i style="background:#888780"></i>Error per example</span></div>
+<svg width="100%" viewBox="0 0 680 300" role="img" aria-label="Scatter plot of price against square feet with a line that moves toward the points as training steps run.">
+<line x1="60" y1="260" x2="640" y2="260" stroke="#888780" stroke-width="0.5"/>
+<line x1="60" y1="20" x2="60" y2="260" stroke="#888780" stroke-width="0.5"/>
+<text x="350" y="288" text-anchor="middle">Square feet (feature)</text>
+<text x="60" y="12" text-anchor="start">Price (label)</text>
+<g id="res"></g>
+<line id="ln" x1="60" y1="260" x2="640" y2="20" stroke="#7F77DD" stroke-width="2.5" stroke-linecap="round"/>
+<g id="dots"></g>
+</svg>
+<div class="ctl">
+<button id="bstep">Step</button>
+<button id="brun">Run</button>
+<button id="breset">Reset</button>
+<span style="color:var(--muted);margin-left:8px">Learning rate</span>
+<input type="range" id="lr" min="0.02" max="1" step="0.02" value="0.1" style="width:160px">
+<span id="lrv" style="font-weight:500;min-width:32px">0.10</span>
+</div>
+<script>
+var X=[0.1,0.2,0.3,0.4,0.5,0.6,0.75,0.9];
+var Y=[0.28,0.3,0.42,0.38,0.55,0.5,0.7,0.72];
+var w=0,b=0.85,steps=0,timer=null;
+var NS='http://www.w3.org/2000/svg';
+function px(x){return 60+x*580}
+function py(y){return 260-y*240}
+var dots=document.getElementById('dots'),res=document.getElementById('res');
+var rl=[];
+for(var i=0;i<X.length;i++){
+var c=document.createElementNS(NS,'circle');
+c.setAttribute('cx',px(X[i]));c.setAttribute('cy',py(Y[i]));c.setAttribute('r',6);c.setAttribute('fill','#D85A30');
+dots.appendChild(c);
+var l=document.createElementNS(NS,'line');
+l.setAttribute('stroke','#888780');l.setAttribute('stroke-width','1');l.setAttribute('stroke-dasharray','3 3');
+res.appendChild(l);rl.push(l);
+}
+function clamp(v){return Math.max(-20,Math.min(20,v))}
+function lossNow(){
+var s=0;
+for(var i=0;i<X.length;i++){var e=w*X[i]+b-Y[i];s+=e*e}
+return s/X.length;
+}
+function render(){
+var ln=document.getElementById('ln');
+var y0=Math.max(-200,Math.min(460,py(b))),y1=Math.max(-200,Math.min(460,py(w+b)));
+ln.setAttribute('y1',y0);ln.setAttribute('y2',y1);
+for(var i=0;i<X.length;i++){
+var p=w*X[i]+b;
+var yy=Math.max(0,Math.min(300,py(p)));
+rl[i].setAttribute('x1',px(X[i]));rl[i].setAttribute('x2',px(X[i]));
+rl[i].setAttribute('y1',py(Y[i]));rl[i].setAttribute('y2',yy);
+}
+var L=lossNow();
+document.getElementById('loss').textContent=(isFinite(L)&&L<1000)?L.toFixed(4):'exploding';
+document.getElementById('steps').textContent=steps;
+}
+function step(){
+var lr=parseFloat(document.getElementById('lr').value);
+var dw=0,db=0,n=X.length;
+for(var i=0;i<n;i++){var e=w*X[i]+b-Y[i];dw+=2*e*X[i]/n;db+=2*e/n}
+w=clamp(w-lr*dw);b=clamp(b-lr*db);steps++;render();
+}
+function stop(){if(timer){clearInterval(timer);timer=null}document.getElementById('brun').textContent='Run'}
+document.getElementById('bstep').onclick=function(){stop();step()};
+document.getElementById('brun').onclick=function(){
+if(timer){stop();return}
+document.getElementById('brun').textContent='Pause';
+timer=setInterval(function(){step();if(steps>=600)stop()},60);
+};
+document.getElementById('breset').onclick=function(){stop();w=0;b=0.85;steps=0;render()};
+document.getElementById('lr').oninput=function(){document.getElementById('lrv').textContent=parseFloat(this.value).toFixed(2)};
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Optimizer race: SGD vs momentum vs Adam</title>
+<style>
+:root{--bg:#fff;--fg:#2c2c2a;--muted:#5f5e5a;--surface:#f1efe8;--border:#b4b2a9;--btn:#fff;--btnb:#888780}
+@media (prefers-color-scheme: dark){:root{--bg:#1f1e1d;--fg:#f1efe8;--muted:#b4b2a9;--surface:#2c2c2a;--border:#5f5e5a;--btn:#2c2c2a;--btnb:#888780}}
+body{margin:0;padding:20px 16px;background:var(--bg);color:var(--fg);font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;max-width:720px;margin:0 auto}
+h1{font-size:20px;font-weight:600;margin:0 0 4px}
+p.sub{margin:0 0 16px;color:var(--muted);font-size:14px}
+.mrow{display:flex;gap:10px;margin:0 0 10px}
+.m{flex:1;background:var(--surface);border-radius:8px;padding:10px 12px}
+.m .l{font-size:13px;color:var(--muted)}
+.m .l i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+.m .v{font-size:20px;font-weight:500}
+.ctl{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:10px 0 0;font-size:14px}
+button{background:var(--btn);color:var(--fg);border:1px solid var(--btnb);border-radius:8px;padding:6px 14px;font-size:14px;cursor:pointer}
+button:hover{background:var(--surface)}
+svg text{fill:var(--muted);font-size:12px}
+ul{color:var(--muted);font-size:14px;padding-left:20px}
+</style>
+</head>
+<body>
+<h1>Optimizer race</h1>
+<p class="sub">Three optimizers descend the same narrow valley. Each ellipse is a level of loss; the minimum is at the center. Numbers show the current loss.</p>
+<div class="mrow">
+<div class="m"><div class="l"><i style="background:#D85A30"></i>SGD</div><div class="v" id="l0">0</div></div>
+<div class="m"><div class="l"><i style="background:#1D9E75"></i>Momentum</div><div class="v" id="l1">0</div></div>
+<div class="m"><div class="l"><i style="background:#7F77DD"></i>Adam</div><div class="v" id="l2">0</div></div>
+</div>
+<svg width="100%" viewBox="0 0 680 260" role="img" aria-label="Three optimizer paths on a narrow valley. SGD zigzags, momentum overshoots, Adam heads more directly to the minimum.">
+<g id="cont" fill="none" stroke="#888780" stroke-width="0.5"></g>
+<circle cx="340" cy="130" r="4" fill="#888780"/>
+<text x="350" y="122" text-anchor="start">minimum</text>
+<polyline id="t0" fill="none" stroke="#D85A30" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline id="t1" fill="none" stroke="#1D9E75" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline id="t2" fill="none" stroke="#7F77DD" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+<circle id="h0" r="5" fill="#D85A30"/>
+<circle id="h1" r="5" fill="#1D9E75"/>
+<circle id="h2" r="5" fill="#7F77DD"/>
+</svg>
+<div class="ctl">
+<button id="bstep">Step</button>
+<button id="brun">Run</button>
+<button id="breset">Reset</button>
+<span style="color:var(--muted);margin-left:8px">Step <span id="sc" style="font-weight:500;color:var(--fg)">0</span> of 100</span>
+</div>
+<ul>
+<li><b style="color:#D85A30">SGD</b> bounces across the narrow valley (steep slope that way) while creeping along the floor (shallow slope).</li>
+<li><b style="color:#1D9E75">Momentum</b> builds speed along the valley and smooths the zigzag, but overshoots and swings around the minimum.</li>
+<li><b style="color:#7F77DD">Adam</b> gives each weight its own step size: damps the steep direction, boosts the shallow one, and heads more directly to the minimum.</li>
+</ul>
+<script>
+var A=1,B=15,X0=-4.5,Y0=1.2;
+function px(x){return 340+x*60}
+function py(y){return 130-y*90}
+function f(p){return 0.5*(A*p[0]*p[0]+B*p[1]*p[1])}
+function grad(p){return [A*p[0],B*p[1]]}
+var NS='http://www.w3.org/2000/svg';
+var cont=document.getElementById('cont');
+[1,3,6,10,15].forEach(function(c){
+var e=document.createElementNS(NS,'ellipse');
+e.setAttribute('cx',340);e.setAttribute('cy',130);
+e.setAttribute('rx',Math.sqrt(2*c/A)*60);e.setAttribute('ry',Math.sqrt(2*c/B)*90);
+cont.appendChild(e);
+});
+var P,V,S,T,trails,count,timer=null;
+function init(){
+P=[[X0,Y0],[X0,Y0],[X0,Y0]];
+V=[[0,0],[0,0],[0,0]];
+S=[0,0];T=0;count=0;
+trails=[[],[],[]];
+for(var i=0;i<3;i++)trails[i].push(px(P[i][0])+','+py(P[i][1]));
+draw();
+}
+function stepAll(){
+var g,i;
+/* SGD */
+g=grad(P[0]);
+P[0]=[P[0][0]-0.12*g[0],P[0][1]-0.12*g[1]];
+/* Momentum */
+g=grad(P[1]);
+V[1]=[0.9*V[1][0]+g[0],0.9*V[1][1]+g[1]];
+P[1]=[P[1][0]-0.05*V[1][0],P[1][1]-0.05*V[1][1]];
+/* Adam */
+g=grad(P[2]);T++;
+var b1=0.9,b2=0.999,lr=0.2,eps=1e-8;
+var mm=[V[2][0],V[2][1]];
+V[2]=[b1*mm[0]+(1-b1)*g[0],b1*mm[1]+(1-b1)*g[1]];
+S=[b2*S[0]+(1-b2)*g[0]*g[0],b2*S[1]+(1-b2)*g[1]*g[1]];
+var mh=[V[2][0]/(1-Math.pow(b1,T)),V[2][1]/(1-Math.pow(b1,T))];
+var sh=[S[0]/(1-Math.pow(b2,T)),S[1]/(1-Math.pow(b2,T))];
+P[2]=[P[2][0]-lr*mh[0]/(Math.sqrt(sh[0])+eps),P[2][1]-lr*mh[1]/(Math.sqrt(sh[1])+eps)];
+for(i=0;i<3;i++)trails[i].push(px(P[i][0])+','+py(P[i][1]));
+count++;draw();
+}
+function draw(){
+for(var i=0;i<3;i++){
+document.getElementById('t'+i).setAttribute('points',trails[i].join(' '));
+document.getElementById('h'+i).setAttribute('cx',px(P[i][0]));
+document.getElementById('h'+i).setAttribute('cy',py(P[i][1]));
+document.getElementById('l'+i).textContent=f(P[i]).toFixed(3);
+}
+document.getElementById('sc').textContent=count;
+}
+function stop(){if(timer){clearInterval(timer);timer=null}document.getElementById('brun').textContent='Run'}
+document.getElementById('bstep').onclick=function(){stop();if(count<100)stepAll()};
+document.getElementById('brun').onclick=function(){
+if(timer){stop();return}
+if(count>=100)init();
+document.getElementById('brun').textContent='Pause';
+timer=setInterval(function(){stepAll();if(count>=100)stop()},70);
+};
+document.getElementById('breset').onclick=function(){stop();init()};
+init();
+</script>
+</body>
+</html>
