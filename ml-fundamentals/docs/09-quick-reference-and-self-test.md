@@ -1,4 +1,4 @@
-# 07 · Quick reference and self-test
+# 09 · Quick reference and self-test
 
 ## Cheat sheet
 
@@ -36,6 +36,20 @@
 | Logits | Raw scores over the vocabulary, before softmax |
 | Temperature | Divide logits by T before softmax: T < 1 sharper, T > 1 flatter, T → 0 greedy; ranking unchanged |
 | Top-k / top-p | Sample only from the k most likely tokens / the smallest set adding up to probability p |
+| Linear regression | Weighted sum of features; fit by minimizing squared error (closed form or gradient descent) |
+| Logistic regression | Linear score through a sigmoid; log-odds are linear; trained with cross-entropy; linear boundary |
+| Cross-entropy | Negative log-likelihood; gradient w.r.t. the score is (p − y); punishes confident wrong answers |
+| Decision tree split | Greedy choice of the question that most reduces impurity (Gini, entropy, variance) |
+| Random forest | Many deep trees on bootstrap samples, averaged: cuts variance |
+| GBDT | Shallow trees in sequence, each fit to the residuals (negative gradient), summed with a learning rate: cuts bias |
+| LambdaMART | GBDT trained with a ranking loss; a long-standing search-ranking workhorse |
+| Bias / variance | Error from too-simple vs too-sensitive models; compare training and validation error to tell which |
+| L2 / L1 | Penalize w² (shrinks smoothly) / \|w\| (drives weights to exactly zero) |
+| Vanishing gradient | Many derivatives below 1 multiplied together; fixed by ReLU/GELU, residuals, normalization, good init |
+| Precision / recall / F1 | Of flagged, how many right / of real, how many caught / harmonic mean of the two |
+| ROC-AUC vs PR-AUC | Ranking quality over all thresholds; prefer PR-AUC when positives are rare |
+| NDCG / MRR | Graded relevance discounted by position / reciprocal rank of the first relevant result |
+| Data leakage | Information at training time that won't exist at prediction time |
 
 ## Common mix-ups
 
@@ -50,6 +64,13 @@
 - **Attention vs MLP:** attention mixes information across tokens; the MLP transforms each token separately.
 - **Temperature:** changes the spread of the probabilities, never the ranking, and does not change the model's weights.
 - **Training vs generation:** training is parallel over all positions (causal mask); generation is one token at a time.
+- **Logistic regression is a classifier**, not a regressor; it models the log-odds linearly.
+- **Random forest vs GBDT:** forest = parallel deep trees averaged (variance); GBDT = sequential shallow trees each correcting the last (bias).
+- **GBDT cannot extrapolate** beyond the target range it saw in training, and needs early stopping to avoid overfitting.
+- **Weight decay vs L2:** the same for SGD, different for Adam; that is why AdamW exists.
+- **Accuracy vs PR-AUC:** under heavy imbalance, accuracy and ROC-AUC can look great while precision is poor.
+- **Validation vs test:** tune on validation, report on test once; fit preprocessing on training data only.
+- **Loss vs metric:** the loss must be differentiable; the metric is what you report.
 
 ## Self-test
 
@@ -73,17 +94,25 @@ Answer out loud in 2-3 minutes each, then check against the notes.
 16. What are the parts of a transformer block and what does each do? Why layer norm instead of batch norm?
 17. What does the causal mask do, and how does it let an LLM train on next tokens in parallel?
 18. What does temperature do to a model's output probabilities? How does it relate to temperature scaling in calibration?
+19. Compare linear and logistic regression. Why is logistic regression trained with cross-entropy, and what is its gradient?
+20. Explain GBDT in 60 seconds. How does it differ from a random forest, and when would you prefer each?
+21. Diagnose from the numbers: training error 2%, validation error 15%. What do you try? What if both were 15%?
+22. L1 vs L2, and weight decay vs L2 with Adam.
+23. Precision, recall, F1, ROC-AUC and PR-AUC: define each and say when ROC-AUC misleads.
+24. What is data leakage? Give three examples and how to prevent them.
 
 ## Topics worth studying next
 
-- **Bias-variance tradeoff:** diagnosing each; regularization (L1 vs L2, dropout, early stopping).
-- **Loss functions:** MSE vs cross-entropy; why logistic regression uses cross-entropy; the gradient sketch.
-- **Evaluation metrics:** precision/recall, ROC-AUC vs PR-AUC (and when each misleads under imbalance), NDCG/MRR for ranking, calibration.
-- **Data problems:** leakage, train/validation/test splits, training-serving skew.
-- **Backprop and optimization:** chain-rule intuition, vanishing/exploding gradients, ReLU vs sigmoid/tanh.
-- **Trees vs neural nets:** random forests vs gradient boosting; when each wins on tabular data.
-- **Embeddings and two-tower models:** negative sampling, contrastive loss, approximate nearest neighbor retrieval.
-- **Transformers and attention:** covered in [06](06-transformers-attention-temperature.md); next, go deeper on efficient attention and long-context tricks.
-- **Offline vs online evaluation:** why offline metrics can disagree with A/B results, position bias, cold start, feedback loops.
+These are not yet covered in these notes.
+
+- **CNNs and RNNs/LSTMs:** convolutions, pooling, why they suit images and sequences; how transformers replaced RNNs.
+- **Embeddings and two-tower retrieval in depth:** negative sampling, contrastive loss, approximate nearest neighbor search, hard negatives.
+- **A/B testing statistics:** randomization, p-values, power and sample size, guardrail metrics, novelty effects, interference.
+- **Recommendation and ranking systems:** candidate generation vs ranking, cold start, diversity, exploration vs exploitation, bandits.
+- **Interpretability:** feature importance, SHAP, partial dependence, attention is not explanation.
+- **Generative models beyond LLMs:** VAEs, GANs, diffusion at a conceptual level.
+- **Efficient attention and long context:** FlashAttention, sparse attention, grouped-query attention.
+- **Production ML:** drift detection, monitoring, feature stores, retraining cadence, shadow deployments.
+- **Probability and statistics refreshers:** Bayes' rule, maximum likelihood vs MAP, the central limit theorem, confidence intervals.
 
 Practice structure for explaining any concept: the intuition in one sentence, a tiny example, then the main failure mode.

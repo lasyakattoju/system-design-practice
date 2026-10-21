@@ -172,4 +172,4 @@ In [04](04-generalization-and-evaluation.md), temperature scaling divides a clas
 11. How does temperature in text generation relate to temperature scaling for calibration?
 12. When would you pick low vs high temperature? What do top-k and top-p add?
 
-Next: [07 · Quick reference and self-test](07-quick-reference-and-self-test.md)
+Next: [07 · Classical models](07-classical-models.md)

@@ -12,7 +12,9 @@ Short, plain-language notes on core machine learning concepts, each with a diagr
 | 4 | [Generalization and evaluation](docs/04-generalization-and-evaluation.md): overfitting, training-serving skew, class imbalance, calibration | reliability diagram |
 | 5 | [Fine-tuning](docs/05-fine-tuning.md): full, frozen layers, LoRA, catastrophic forgetting | fine-tuning layers |
 | 6 | [Transformers, attention and temperature](docs/06-transformers-attention-temperature.md): pipeline, queries/keys/values with a worked example, multi-head, causal mask, transformer block, position info, KV cache, temperature and sampling | pipeline, block, attention steps, attention weights, causal mask, multi-head, temperature |
-| 7 | [Quick reference and self-test](docs/07-quick-reference-and-self-test.md): cheat sheet, common mix-ups, practice questions | none |
+| 7 | [Classical models](docs/07-classical-models.md): linear regression, logistic regression, decision-tree splits, random forest, GBDT (with a worked boosting example), model-choice table, k-NN/Naive Bayes/SVM/k-means/PCA | linear regression, logistic regression, gradient boosting, bagging vs boosting |
+| 8 | [Theory and evaluation](docs/08-theory-and-evaluation.md): bias-variance, L1/L2 regularization, loss functions, backprop and activations, metrics (precision/recall, ROC vs PR AUC, NDCG), validation, leakage, feature basics | bias-variance, confusion matrix, data splits |
+| 9 | [Quick reference and self-test](docs/09-quick-reference-and-self-test.md): cheat sheet, common mix-ups, practice questions, what is not yet covered | none |
 
 ## Interactive demos
 
@@ -36,6 +38,10 @@ All diagrams live in [`diagrams/`](diagrams/) as standalone SVGs, so they render
 | ![Transformer block](diagrams/13-transformer-block.svg) | ![Attention steps](diagrams/14-attention-steps.svg) |
 | ![Attention weights](diagrams/15-attention-weights.svg) | ![Causal mask](diagrams/16-causal-mask.svg) |
 | ![Multi-head attention](diagrams/17-multi-head-attention.svg) | ![Temperature](diagrams/18-temperature.svg) |
+| ![Linear regression](diagrams/19-linear-regression.svg) | ![Logistic regression](diagrams/20-logistic-regression.svg) |
+| ![Gradient boosting](diagrams/21-gradient-boosting.svg) | ![Bagging vs boosting](diagrams/22-bagging-vs-boosting.svg) |
+| ![Bias-variance](diagrams/23-bias-variance.svg) | ![Confusion matrix](diagrams/24-confusion-matrix.svg) |
+| ![Data splits](diagrams/25-data-splits.svg) | |
 
 ## The big picture in one paragraph
 
